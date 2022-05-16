@@ -1,6 +1,10 @@
 ﻿using ASP.NET_Core_QR_Code_Generator.Models;
+using iTextSharp.text.pdf.qrcode;
 using Microsoft.AspNetCore.Mvc;
+using QRCoder;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace ASP.NET_Core_QR_Code_Generator.Controllers
 {
@@ -18,15 +22,20 @@ namespace ASP.NET_Core_QR_Code_Generator.Controllers
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult Index(string inputText)
         {
+            using (MemoryStream ms= new MemoryStream())
+            {
+                QRCodeGenerator qrGenerator = new QRCodeGenerator();
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode("The text which should be encoded.", QRCodeGenerator.ECCLevel.Q);
+                QRCode qrCode = new QRCode(qrCodeData);
+                Bitmap qrCodeImage = qrCode.GetGraphic(20);
+                {
+                    oBitmap.Save(ms, ImageFormat.Png);
+                    ViewBag.QRCode ="data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
+                }
+            }
             return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }
