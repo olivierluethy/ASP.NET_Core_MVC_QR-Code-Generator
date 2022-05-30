@@ -1,41 +1,46 @@
 ﻿using ASP.NET_Core_QR_Code_Generator.Models;
-using iTextSharp.text.pdf.qrcode;
 using Microsoft.AspNetCore.Mvc;
 using QRCoder;
-using System.Diagnostics;
+using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 
-namespace ASP.NET_Core_QR_Code_Generator.Controllers
+namespace GeneratingQRCode.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
-        public IActionResult Index()
+        [HttpGet]
+        public IActionResult CreateQRCode()
         {
             return View();
         }
 
-        public IActionResult Index(string inputText)
+        [HttpPost]
+        public IActionResult CreateQRCode(QRCodeModel qRCode)
         {
-            using (MemoryStream ms= new MemoryStream())
+            QRCodeGenerator QrGenerator = new QRCodeGenerator();
+            QRCodeData QrCodeInfo = QrGenerator.CreateQrCode(qRCode.QRCodeText, QRCodeGenerator.ECCLevel.Q);
+            QRCode QrCode = new QRCode(QrCodeInfo);
+            Bitmap QrBitmap = QrCode.GetGraphic(60);
+            byte[] BitmapArray = QrBitmap.BitmapToByteArray();
+            string QrUri = string.Format("data:image/png;base64,{0}", Convert.ToBase64String(BitmapArray));
+            ViewBag.QrCodeUri = QrUri;
+            return View();
+        }
+    }
+
+    //Extension method to convert Bitmap to Byte Array
+    public static class BitmapExtension
+    {
+        public static byte[] BitmapToByteArray(this Bitmap bitmap)
+        {
+            using (MemoryStream ms = new MemoryStream())
             {
-                QRCodeGenerator qrGenerator = new QRCodeGenerator();
-                QRCodeData qrCodeData = qrGenerator.CreateQrCode("The text which should be encoded.", QRCodeGenerator.ECCLevel.Q);
-                QRCode qrCode = new QRCode(qrCodeData);
-                Bitmap qrCodeImage = qrCode.GetGraphic(20);
-                {
-                    oBitmap.Save(ms, ImageFormat.Png);
-                    ViewBag.QRCode ="data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
-                }
+                bitmap.Save(ms, ImageFormat.Png);
+                return ms.ToArray();
             }
-            return View();
         }
     }
 }
